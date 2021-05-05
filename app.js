@@ -27,28 +27,40 @@ const item3 = new Item({
   name:"<-- Hit this to delete an item"
 });
 
-Item.insertMany([item1, item2, item3],function(err){
-  if(err){
-    console.log(err);
-  }else{
-    console.log("Successfully added default items to DB");
-  }
-})
 
 
 app.get("/", function(req, res) {
 
   var today = new Date();
-
   var options = { weekday: 'long',
                   month: 'long',
                   day: 'numeric'
                  };
   var day = today.toLocaleDateString("en-IN",options);
-  res.render('list', {
-    title: day,
-    newItems: items
+
+
+  Item.find(function(err,foundItems){
+    if(foundItems.length === 0){
+      Item.insertMany([item1, item2, item3],function(err){
+        if(err){
+          console.log(err);
+        }else{
+          console.log("Successfully added default items to DB");
+        }
+      });
+    }
+    
+    if(err){
+      console.log(err);
+    }else{
+      res.render('list', {
+        title: day,
+        newItems: foundItems
+      });
+    }
   });
+
+
 });
 
 app.get("/work",function(req,res){
