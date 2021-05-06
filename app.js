@@ -34,7 +34,12 @@ const item3 = new Item({
 });
 const defaultItems = [item1,item2,item3];
 
-const CustomList = mongoose.model("CustomList",itemsSchema);
+//creating a new custom schema for the custom list
+const customSchema = new mongoose.Schema({
+  name:String,
+  items:[itemsSchema]
+});
+const CustomList = mongoose.model("CustomList",customSchema);
 
 //variable day made which stores the current day for the default list
 const today = new Date();
@@ -71,45 +76,51 @@ app.get("/", function(req, res) {
 
 //get request for the custom listS
 app.get("/:customList",function(req,res){
+  const customListName = req.params.customList;
 
-  CustomList.find(function(err,customItems){
-    if(customItems.length === 0){
-      CustomList.insertMany([item1, item2],function(err){
-        if(err){
-          console.log(err);
-        }else{
-          console.log("Successfully added default items to customDB");
-        }
-      });
-    }
-
+  CustomList.findOne({name:customListName},function(err,foundList){
     if(err){
       console.log(err);
     }else{
-      res.render('list', {
-        title: req.params.customList,
-        newItems: customItems
-      });
+      if(!foundList){
+        const list = new CustomList({
+          name: customListName,
+          items: defaultItems
+        });
+        list.save();
+        res.redirect("/"+customListName);
+      }else{
+        res.render("list",{
+          title:foundList.name,
+          newItems:foundList.items
+        });
+      }
     }
   });
+});
 
-  });
+
 
 //post request for the home route
 app.post("/",function(req,res){
   var item = req.body.val;        //stores the new entry by the user in the list
   var list = req.body.button;     //stores the name of the list in which new item is added
-  const newEntry = new Item({
+  const newitem = new Item({         //stores new entry in the required format
     name:item
   });
 
-  if(list === day){
-    newEntry.save();
+  if(list === day){                //if the list title is the current day(default)then save in the default collection(Item)
+    newitem.save();
     res.redirect("/");
 
   }else{
-    console.log(day);
-    console.log(list);
+    CustomList.findOne({name:list},function(err,foundList){
+
+        foundList.items.push(newitem);
+        foundList.save();
+        res.redirect("/"+list);
+
+    });
   }
 });
 
