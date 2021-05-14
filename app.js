@@ -127,16 +127,29 @@ app.post("/",function(req,res){
 //post request for the home route
 app.post("/delete",function(req,res){
   const checkbox = req.body.checkbox;  //stores the id of the element which user selects throught the checkbox
+  const listName = req.body.listName;  //stores the name of the list from which item is being deleted
 
-  //deleting the selected item
-  Item.deleteOne({_id:checkbox},function(err){
-    if(err){
-      console.log(err);
-    }else{
-      console.log("Successfully deleted the selected item");
-      res.redirect("/");
-    }
-  });
+  if(listName === day){
+    //deleting the selected item from the default list
+    Item.deleteOne({_id:checkbox},function(err){
+      if(err){
+        console.log(err);
+      }else{
+        console.log("Successfully deleted the selected item");
+        res.redirect("/");
+      }
+    });
+
+  }else{
+    CustomList.findOneAndUpdate({name:listName},{$pull:{items:{_id:checkbox}}},function(err,foundIte){
+      if(err){
+        console.log(err);
+      }else{
+        res.redirect("/"+listName);
+      }
+    });
+  }
+
 });
 
 //listening to the indicated port
